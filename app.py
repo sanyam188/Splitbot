@@ -61,13 +61,20 @@ def friends():
     friend_list = []  #Friends list
     bal_list = []   #Balance list
     
+    # li = []
     for friend in friends:
         friend_list.append(friend.getFirstName())
-        for bal in friend.getBalances():
-            if len(bal.getAmount()) == 0:
-                bal_list.append("0")
-            else:
-                bal_list.append(bal.getAmount())
+        print(friend.getBalances())
+        print(len(friend.getBalances()))
+
+        if len(friend.getBalances())==0:
+            bal_list.append("0")
+        else:
+            for bal in friend.getBalances():
+                if len(bal.getAmount()) == 0:
+                    bal_list.append("0")
+                else:
+                    bal_list.append(bal.getAmount())
  
     output = {'friends': friend_list, 'balances': bal_list}
     return jsonify(output)

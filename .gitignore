@@ -130,3 +130,4 @@ dmypy.json
 
 #API keys for OAUTH
 config.py
+zuliprc
