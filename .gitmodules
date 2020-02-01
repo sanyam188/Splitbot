@@ -1,3 +1,3 @@
 [submodule "python-zulip-api"]
 	path = python-zulip-api
-	url = https://github.com/zulip/python-zulip-api.git
+	url = https://github.com/ayushjainrksh/python-zulip-api.git
