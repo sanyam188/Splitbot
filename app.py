@@ -5,24 +5,31 @@ import config as Config
 app = Flask(__name__)
 app.secret_key = Config.secret_key
 
+#Default route for checking if a user is logged in
 @app.route("/")
 def home():
-    if 'access_token' in session:
-        return redirect(url_for("friends"))
-    return render_template("home.html")
 
+    if 'access_token' in session:
+        return redirect(url_for('help'))
+
+    #if user is not logged in
+    return redirect(url_for('login'))
+
+
+#Login route
 @app.route("/login")
 def login():
 
     sObj = Splitwise(Config.consumer_key,Config.consumer_secret)
-    print(sObj)
     url, secret = sObj.getAuthorizeURL()
     session['secret'] = secret
-    print(url)
-    print(secret)
-    return redirect(url)
+
+    #If user is logged in then url redirects to authorize route
+    #Else url redirects to splitwise login website
+    return redirect(url) 
 
 
+#Authorize route
 @app.route("/authorize")
 def authorize():
 
@@ -31,52 +38,67 @@ def authorize():
 
     oauth_token    = request.args.get('oauth_token')
     oauth_verifier = request.args.get('oauth_verifier')
-    print(request.args)
     
     sObj = Splitwise(Config.consumer_key,Config.consumer_secret)
     access_token = sObj.getAccessToken(oauth_token,session['secret'],oauth_verifier)
     session['access_token'] = access_token
 
-    return redirect(url_for("friends"))
+    return redirect(url_for("help"))
 
 
+#Get the list of friends along with balances
 @app.route("/friends")
 def friends():
+
     if 'access_token' not in session:
         return redirect(url_for("home"))
 
     sObj = Splitwise(Config.consumer_key,Config.consumer_secret)
     sObj.setAccessToken(session['access_token'])
 
-    friends = sObj.getFriends()
-    friend_list = []
-    bal_list = []
+    friends = sObj.getFriends() #Get a list of friends object using Splitwise API
+    
+    friend_list = []  #Friends list
+    bal_list = []   #Balance list
+    
     for friend in friends:
         friend_list.append(friend.getFirstName())
-        bal_list.append(["".join(x.getAmount()) for x in friend.getBalances()])
-    print(bal_list)
-    # return jsonify(friends)
-    # print("HODSfjosdf ", friends)
+        for bal in friend.getBalances():
+            if len(bal.getAmount()) == 0:
+                bal_list.append("0")
+            else:
+                bal_list.append(bal.getAmount())
+ 
     output = {'friends': friend_list, 'balances': bal_list}
     return jsonify(output)
-    # friend_dict = {}
-    # friend_dict['id'] = [f.getId() for f in friends]
-    # print(friend_dict)
-    # return friend_dict
-    # return render_template("friends.html",friends=friends)
 
+
+#Get list of groups with balances
 @app.route("/groups")
 def groups():
+
     if 'access_token' not in session:
         return redirect(url_for("home"))
 
     sObj = Splitwise(Config.consumer_key,Config.consumer_secret)
     sObj.setAccessToken(session['access_token'])
-    print("session : ", session)
 
-    groups = sObj.getGroups()
-    return render_template("groups.html", groups=groups)
+    groups = sObj.getGroups() #Get a list of grpups object
+    
+    group_list = []  #group list
+    bal_list = []   #Balance list
+    
+    for group in groups:
+        group_list.append(group.getName())
+        print(group.getName())
+        for debt in group.getSimplifiedDebts():
+            print(debt.getFromUser(), debt.getToUser(), debt.getAmount())
 
+    output = {'groups': group_list}
+    return jsonify(output)
+
+
+#Default route to display list of options to user
 @app.route("/help")
 def help():
     return "Hello"
