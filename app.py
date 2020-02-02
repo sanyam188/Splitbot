@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, render_template, redirect, session, url_for
 from splitwise import Splitwise
 import config as Config
+import requests
 
 app = Flask(__name__)
 app.secret_key = Config.secret_key
@@ -41,6 +42,7 @@ def authorize():
     
     sObj = Splitwise(Config.consumer_key,Config.consumer_secret)
     access_token = sObj.getAccessToken(oauth_token,session['secret'],oauth_verifier)
+    print("Access Token ", access_token)
     session['access_token'] = access_token
 
     return redirect(url_for("help"))
@@ -98,10 +100,13 @@ def groups():
     for group in groups:
         group_list.append(group.getName())
         print(group.getName())
+        group_bal = []
         for debt in group.getSimplifiedDebts():
+            group_bal.append((debt.getFromUser(), debt.getToUser(), debt.getAmount()))
             print(debt.getFromUser(), debt.getToUser(), debt.getAmount())
+        bal_list.append(group_bal)
 
-    output = {'groups': group_list}
+    output = {'groups': group_list, 'balances': bal_list}
     return jsonify(output)
 
 
@@ -109,6 +114,13 @@ def groups():
 @app.route("/help")
 def help():
     return "Hello"
+
+@app.route("/isloggedin")
+def isloggedin():
+    if('access_token' in session):
+        return True
+    else:
+        return False
 
 if __name__ == "__main__":
     app.run(threaded=True,debug=True)
